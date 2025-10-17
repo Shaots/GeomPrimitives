@@ -53,7 +53,7 @@ void Draw(std::span<geometry::Shape> shapes) {
                    shape);
 
         // Add shape number
-        const auto center = shape.visit([](auto &&s) { return s.Center(); });
+        const auto center = std::visit([](auto &&s) { return s.Center(); }, shape);
         auto t = text(center.x, center.y, std::to_string(index));
         t->font_size(14);
         t->color("black");
