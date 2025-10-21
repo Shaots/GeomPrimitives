@@ -5,6 +5,7 @@
 #include <expected>
 #include <format>
 #include <numbers>
+#include <numeric>
 #include <optional>
 #include <print>
 #include <ranges>
@@ -73,15 +74,31 @@ struct Lines2DDyn {
 struct BoundingBox {
     double min_x, min_y, max_x, max_y;
 
-    /* ваш код здесь */
+    void Overlaps();
+
+    double Width() { return max_x - min_x; }
+
+    double Height() { return max_y - min_y; }
+
+    Point2D Center() { return Point2D{min_x + Width() / 2, min_y + Height() / 2}; }
 };
 
 struct Line {
     Point2D start, end;
 
-    /* ваш код здесь */
+    double length() { return start.DistanceTo(end); }
 
-    Point2D Center() { return {}; }
+    Point2D Direction() { return end - start; }
+
+    BoundingBox BoundBox() {
+        return BoundingBox{std::min(start.x, end.x), std::min(start.y, end.y), std::max(start.x, end.x),
+                           std::max(start.y, end.y)};
+    }
+
+    double Height() { return std::fabs(end.y - start.y); }
+
+    Point2D Center() { return (start + end) / 2; }
+
     std::array<Point2D, 2> Vertices() { return {Point2D{start.x, start.y}, {end.x, end.y}}; }
     Lines2D<2> Lines() const { return {{start.x, end.x}, {start.y, end.y}}; }
 };
@@ -103,7 +120,14 @@ struct Triangle {
     std::array<Point2D, 3> Vertices() { return {a, b, c}; }
     Lines2D<4> Lines() const { return {{a.x, b.x, c.x, a.x}, {a.y, b.y, c.y, a.y}}; }
 
-    /* ваш код здесь */
+    double Area() { return std::fabs((b - a).Cross(c - a) / 2); }
+
+    double Height() { return 1.0; }
+
+    BoundingBox BoundBox() {
+        return BoundingBox{std::min({a.x, b.x, c.x}), std::min({a.y, b.y, c.y}), std::max({a.x, b.x, c.x}),
+                           std::max({a.y, b.y, c.y})};
+    }
 };
 
 struct Rectangle {
@@ -111,9 +135,23 @@ struct Rectangle {
     double width, height;
 
     /* ваш код здесь */
-    Point2D Center() { return {}; }
-    std::array<Point2D, 1> Vertices() { return {}; }
-    Lines2D<1> Lines() const { return {}; }
+    Point2D Center() { return bottom_left + Point2D{width, height} / 2; }
+    std::array<Point2D, 4> Vertices() {
+        return {bottom_left, bottom_left + Point2D{width, 0}, bottom_left + Point2D{width, height},
+                bottom_left + Point2D{0, height}};
+    }
+    Lines2D<5> Lines() const {
+        return {{bottom_left.x, bottom_left.x + width, bottom_left.x + width, bottom_left.x, bottom_left.x},
+                {bottom_left.y, bottom_left.y, bottom_left.x + height, bottom_left.x + height, bottom_left.y}};
+    }
+
+    double Area() { return width * height; }
+
+    double Height() { return height; }
+
+    BoundingBox BoundBox() {
+        return BoundingBox{bottom_left.x, bottom_left.y, bottom_left.x + width, bottom_left.y + height};
+    }
 };
 
 struct RegularPolygon {
@@ -124,7 +162,7 @@ struct RegularPolygon {
     constexpr RegularPolygon(Point2D center, double radius, int sides)
         : center_p(center), radius(radius), sides(sides) {}
 
-    Point2D Center() { return {}; }
+    Point2D Center() { return center_p; }
     std::vector<Point2D> Vertices() {
         std::vector<Point2D> points;
         points.reserve(sides);
@@ -135,7 +173,44 @@ struct RegularPolygon {
         }
         return points;
     }
-    Lines2DDyn Lines() const { return {}; }
+
+    Lines2DDyn Lines() const {
+        std::vector<double> x;
+        std::vector<double> y;
+        x.reserve(sides + 1);
+        y.reserve(sides + 1);
+        for (int i = 0; i < sides + 1; ++i) {
+            const double angle = 2 * std::numbers::pi * i / sides;
+            x.emplace_back(center_p.x + radius * std::cos(angle));
+            y.emplace_back(center_p.y + radius * std::sin(angle));
+        }
+        return Lines2DDyn(std::move(x), std::move(y));
+    }
+
+    double Height() { return 0; }
+
+    BoundingBox BoundBox() {
+        std::vector<Point2D> points = Vertices();
+        double min_x = INFINITY;
+        double min_y = INFINITY;
+        double max_x = -INFINITY;
+        double max_y = -INFINITY;
+        std::for_each(points.begin(), points.end(), [&](const Point2D &p) {
+            if (p.x < min_x) {
+                min_x = p.x;
+            }
+            if (p.y < min_y) {
+                min_y = p.y;
+            }
+            if (p.x > max_x) {
+                max_x = p.x;
+            }
+            if (p.y > max_y) {
+                max_y = p.y;
+            }
+        });
+        return BoundingBox{min_x, min_y, max_x, max_y};
+    }
 };
 
 struct Circle {
@@ -153,8 +228,8 @@ struct Circle {
     //
     // Должны быть сделана по аналогии с RegularPolygon::Vertices
     //
-    std::vector<Point2D> Vertices(size_t N = 30) { return {}; }
-    Lines2DDyn Lines(size_t N = 100) const { return {}; }
+    std::vector<Point2D> Vertices(int N = 30) { return RegularPolygon{center_p, radius, N}.Vertices(); }
+    Lines2DDyn Lines(int N = 100) const { return RegularPolygon{center_p, radius, N}.Lines(); }
 };
 
 class Polygon {
@@ -164,9 +239,28 @@ public:
     //
     // Должны быть сделана по аналогии с RegularPolygon::Vertices
     //
-    Point2D Center() { return {}; }
-    std::vector<Point2D> Vertices(size_t N = 30) const { return {}; }
-    Lines2DDyn Lines(size_t N = 100) const { return {}; }
+    Point2D Center() {
+        return std::accumulate(points_.begin(), points_.end(), Point2D{0.0, 0.0},
+                               [](Point2D acc, Point2D current) { return acc + current; }) /
+               points_.size();
+    }
+    std::vector<Point2D> Vertices() const { return points_; }
+    Lines2DDyn Lines() const {
+        Lines2DDyn lines;
+        size_t sz = points_.size();
+        lines.Reserve(sz + 1);
+        for (int i = 0; i < sz; ++i) {
+            lines.x.emplace_back(points_[i].x);
+            lines.y.emplace_back(points_[i].y);
+        }
+        lines.x.emplace_back(points_[0].x);
+        lines.y.emplace_back(points_[0].y);
+        return lines;
+    }
+
+    BoundingBox BoundBox() { return bounding_box_; }
+
+    double Height() { return bounding_box_.Height(); }
 
 private:
     std::vector<Point2D> points_;
