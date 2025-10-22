@@ -25,8 +25,8 @@ struct Point2D {
     constexpr Point2D(double x, double y) : x(x), y(y) {}
 
     // Comparison
-    bool operator<(const Point2D &other) { return x < other.x && y < other.y; }
-    bool operator==(const Point2D &other) { return x == other.x && y == other.y; }
+    bool operator<(const Point2D &other) const { return x < other.x && y < other.y; }
+    bool operator==(const Point2D &other) const { return x == other.x && y == other.y; }
 
     // Binary math operators
     Point2D operator+(const Point2D &other) { return {x + other.x, y + other.y}; }
@@ -73,6 +73,10 @@ struct Lines2DDyn {
 
 struct BoundingBox {
     double min_x, min_y, max_x, max_y;
+
+    bool operator==(const BoundingBox &other) const {
+        return min_x == other.min_x && min_y == other.min_y && max_x == other.max_x && max_y == other.max_y;
+    }
 
     void Overlaps();
 
@@ -122,7 +126,7 @@ struct Triangle {
 
     double Area() { return std::fabs((b - a).Cross(c - a) / 2); }
 
-    double Height() { return 1.0; }
+    double Height() { return std::max({a.y, b.y, c.y}) - std::min({a.y, b.y, c.y}); }
 
     BoundingBox BoundBox() {
         return BoundingBox{std::min({a.x, b.x, c.x}), std::min({a.y, b.y, c.y}), std::max({a.x, b.x, c.x}),
