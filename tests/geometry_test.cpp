@@ -1,5 +1,6 @@
 #include <geometry.hpp>
 #include <gtest/gtest.h>
+#include <intersections.hpp>
 
 using namespace geometry;
 
@@ -62,3 +63,56 @@ TEST(BasicCheck, FormatP) {
     std::cout << std::format("{}", regPolygon.Vertices()) << std::endl;
     std::cout << std::format("{:new_line}", regPolygon.Vertices()) << std::endl;
 }
+
+class IntersectionLines : public testing::TestWithParam<std::tuple<Shape, Shape, std::vector<Point2D>>> {};
+
+using namespace geometry::intersections;
+TEST_P(IntersectionLines, Lines) {
+    std::tuple<Shape, Shape, std::vector<Point2D>> input = GetParam();
+    EXPECT_EQ(GetIntersectPoint(std::get<0>(input), std::get<1>(input)), std::get<2>(input));
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    A, IntersectionLines,
+    testing::Values(std::make_tuple<Shape, Shape, std::vector<Point2D>>(Line(Point2D(0, 0), Point2D(2, 2)),
+                                                                        Line(Point2D(0, -1), Point2D(1, 0)), {}),
+                    std::make_tuple<Shape, Shape, std::vector<Point2D>>(Line(Point2D(0, 0), Point2D(2, 2)),
+                                                                        Line(Point2D(0, -1), Point2D(1, -2)), {}),
+                    std::make_tuple<Shape, Shape, std::vector<Point2D>>(Line(Point2D(0, 0), Point2D(2, 2)),
+                                                                        Line(Point2D(2, 0), Point2D(0, 2)),
+                                                                        std::vector{Point2D(1, 1)}),
+                    std::make_tuple<Shape, Shape, std::vector<Point2D>>(Line(Point2D(0, 0), Point2D(2, 2)),
+                                                                        Line(Point2D(2, 2), Point2D(100, 5)),
+                                                                        std::vector{Point2D(2, 2)})));
+
+class IntersectionCircles : public testing::TestWithParam<std::tuple<Shape, Shape, std::vector<Point2D>>> {};
+TEST_P(IntersectionCircles, Circles) {
+    std::tuple<Shape, Shape, std::vector<Point2D>> input = GetParam();
+    EXPECT_EQ(GetIntersectPoint(std::get<0>(input), std::get<1>(input)), std::get<2>(input));
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    A, IntersectionCircles,
+    testing::Values(
+        std::make_tuple<Shape, Shape, std::vector<Point2D>>(Circle(Point2D(-2, 0), 1), Circle(Point2D(2, 0), 1), {}),
+        std::make_tuple<Shape, Shape, std::vector<Point2D>>(Circle(Point2D(-2, 0), 2), Circle(Point2D(2, 0), 2),
+                                                            std::vector{Point2D(0, 0)}),
+        std::make_tuple<Shape, Shape, std::vector<Point2D>>(Circle(Point2D(0, 0), sqrt(2)),
+                                                            Circle(Point2D(2, 2), sqrt(2)), std::vector{Point2D(1, 1)}),
+        std::make_tuple<Shape, Shape, std::vector<Point2D>>(Circle(Point2D(0, 0), 1), Circle(Point2D(1, 1), 1),
+                                                            std::vector{Point2D(1, 0), Point2D(0, 1)})));
+
+class IntersectionOthers : public testing::TestWithParam<std::pair<Shape, Shape>> {};
+TEST_P(IntersectionOthers, Circles) {
+    std::pair<Shape, Shape> input = GetParam();
+    EXPECT_THROW(GetIntersectPoint(input.first, input.second), std::logic_error);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    A, IntersectionOthers,
+    testing::Values(std::make_pair<Shape, Shape>(Circle(Point2D(-2, 0), 1), Line(Point2D(0, 0), Point2D(2, 2))),
+                    std::make_pair<Shape, Shape>(Line(Point2D(0, 0), Point2D(2, 2)), Circle(Point2D(-2, 0), 1)),
+                    std::make_pair<Shape, Shape>(RegularPolygon(Point2D(-1, -2), 5, 6),
+                                                 Triangle(Point2D(-1, -2), Point2D(1, -3), Point2D(2, 1))),
+                    std::make_pair<Shape, Shape>(RegularPolygon(Point2D(-1, -2), 5, 6),
+                                                 Line(Point2D(0, 0), Point2D(2, 2)))));

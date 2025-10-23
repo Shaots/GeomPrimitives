@@ -26,19 +26,21 @@ struct Point2D {
 
     // Comparison
     bool operator<(const Point2D &other) const { return x < other.x && y < other.y; }
-    bool operator==(const Point2D &other) const { return x == other.x && y == other.y; }
+    bool operator==(const Point2D &other) const {
+        return std::fabs(x - other.x) < 1e-10 && std::fabs(y - other.y) < 1e-10;
+    }
 
     // Binary math operators
-    Point2D operator+(const Point2D &other) { return {x + other.x, y + other.y}; }
-    Point2D operator-(const Point2D &other) { return {x - other.x, y - other.y}; }
-    Point2D operator*(double value) { return {x * value, y * value}; }
-    Point2D operator/(double value) { return {x / value, y / value}; }
+    Point2D operator+(const Point2D &other) const { return {x + other.x, y + other.y}; }
+    Point2D operator-(const Point2D &other) const { return {x - other.x, y - other.y}; }
+    Point2D operator*(double value) const { return {x * value, y * value}; }
+    Point2D operator/(double value) const { return {x / value, y / value}; }
 
     // Binary geometry operations
     double Dot(const Point2D &other) { return x * other.x + y * other.y; }
     double Cross(const Point2D &other) { return x * other.y - y * other.x; }
     double Length() { return std::sqrt(x * x + y * y); }
-    double DistanceTo(const Point2D &other) { return (*this - other).Length(); }
+    double DistanceTo(const Point2D &other) const { return (*this - other).Length(); }
 
     Point2D Normalize() {
         const double len = Length();
