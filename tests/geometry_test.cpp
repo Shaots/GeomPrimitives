@@ -56,3 +56,9 @@ TEST(BasicCheck, Circle) {
     EXPECT_EQ(circle.Lines().x.size(), 101);
     EXPECT_EQ(circle.Vertices().size(), 30);
 }
+
+TEST(BasicCheck, FormatP) {
+    RegularPolygon regPolygon(Point2D(-1, -2), 3, 10);
+    std::cout << std::format("{}", regPolygon.Vertices()) << std::endl;
+    std::cout << std::format("{:new_line}", regPolygon.Vertices()) << std::endl;
+}

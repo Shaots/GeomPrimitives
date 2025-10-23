@@ -301,18 +301,48 @@ template <>
 struct std::formatter<std::vector<geometry::Point2D>> {
     bool use_new_line = false;
 
-    constexpr auto parse(std::format_parse_context &ctx) const {
+    constexpr auto parse(std::format_parse_context &ctx) {
         auto it = ctx.begin();
+        auto end = ctx.end();
+        if (it == end || *it == '}') {
+            return it;
+        }
 
-        /* ваш код здесь */
-
+        const char *format = "new_line";
+        int i = 0;
+        std::string specifier;
+        while (it != end && *it != '}') {
+            specifier += *it;
+            ++it;
+        }
+        if (specifier == format) {
+            use_new_line = true;
+        } else {
+            std::format_error("Invalid format specifier");
+        }
         return it;
     }
 
     template <typename FormatContext>
     auto format(const std::vector<geometry::Point2D> &v, FormatContext &ctx) const {
-
-        /* ваш код здесь */
+        if (v.empty()) {
+            return std::format_to(ctx.out(), "[]");
+        }
+        auto out = ctx.out();
+        *out++ = '[';
+        if (use_new_line) {
+            *out++ = '\n';
+            for (const auto &p : v) {
+                *out++ = '\t';
+                out = std::format_to(out, "{}", p);
+                *out++ = '\n';
+            }
+        } else {
+            for (const auto &p : v) {
+                out = std::format_to(out, "{}, ", p);
+            }
+        }
+        *out++ = ']';
         return ctx.out();
     }
 };
