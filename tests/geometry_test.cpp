@@ -1,6 +1,7 @@
 #include <geometry.hpp>
 #include <gtest/gtest.h>
 #include <intersections.hpp>
+#include <queries.hpp>
 
 using namespace geometry;
 
@@ -116,3 +117,31 @@ INSTANTIATE_TEST_SUITE_P(
                                                  Triangle(Point2D(-1, -2), Point2D(1, -3), Point2D(2, 1))),
                     std::make_pair<Shape, Shape>(RegularPolygon(Point2D(-1, -2), 5, 6),
                                                  Line(Point2D(0, 0), Point2D(2, 2)))));
+
+class Distance2Point : public testing::TestWithParam<std::tuple<Shape, Point2D, double>> {};
+TEST_P(Distance2Point, A) {
+    using namespace geometry::queries;
+    std::tuple<Shape, Point2D, double> input = GetParam();
+    EXPECT_DOUBLE_EQ(DistanceToPoint(std::get<0>(input), std::get<1>(input)), std::get<2>(input));
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    A, Distance2Point,
+    testing::Values(
+        std::make_tuple<Shape, Point2D, double>(Line(Point2D(0, 0), Point2D(2, 2)), Point2D(0, 0), 0),
+        std::make_tuple<Shape, Point2D, double>(Line(Point2D(0, 0), Point2D(2, 2)), Point2D(1, 1), 0),
+        std::make_tuple<Shape, Point2D, double>(Line(Point2D(0, 0), Point2D(2, 2)), Point2D(1, 0), sqrt(2) / 2),
+        std::make_tuple<Shape, Point2D, double>(Line(Point2D(0, 0), Point2D(2, 2)), Point2D(0, 1), sqrt(2) / 2),
+        std::make_tuple<Shape, Point2D, double>(Line(Point2D(0, 0), Point2D(2, 2)), Point2D(-1, -1), sqrt(2)),
+        std::make_tuple<Shape, Point2D, double>(Line(Point2D(0, 0), Point2D(2, 2)), Point2D(-2, 1), sqrt(5)),
+        std::make_tuple<Shape, Point2D, double>(Triangle(Point2D(0, 0), Point2D(2, 2), Point2D(0, 4)), Point2D(-2, 1),
+                                                2),
+        std::make_tuple<Shape, Point2D, double>(Triangle(Point2D(0, 0), Point2D(2, 2), Point2D(0, 4)), Point2D(1, 2),
+                                                sqrt(2) / 2),
+        std::make_tuple<Shape, Point2D, double>(Rectangle(Point2D(0, 0), 5, 6), Point2D(3, 4), 0),
+        std::make_tuple<Shape, Point2D, double>(Rectangle(Point2D(0, 0), 5, 6), Point2D(-1, -1), sqrt(2)),
+        std::make_tuple<Shape, Point2D, double>(Rectangle(Point2D(0, 0), 5, 6), Point2D(-1, 2), 1),
+        std::make_tuple<Shape, Point2D, double>(RegularPolygon(Point2D(0, 0), 6, 6), Point2D(3, 0), 3 * sqrt(3) / 2),
+        std::make_tuple<Shape, Point2D, double>(RegularPolygon(Point2D(0, 0), 6, 6), Point2D(0, 8), 8 - 3 * sqrt(3)),
+        std::make_tuple<Shape, Point2D, double>(Circle(Point2D(0, 0), 6), Point2D(3, 0), 0),
+        std::make_tuple<Shape, Point2D, double>(Circle(Point2D(0, 0), 6), Point2D(0, 8), 2)));

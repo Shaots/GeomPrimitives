@@ -82,11 +82,11 @@ struct BoundingBox {
 
     void Overlaps();
 
-    double Width() { return max_x - min_x; }
+    double Width() const { return max_x - min_x; }
 
-    double Height() { return max_y - min_y; }
+    double Height() const { return max_y - min_y; }
 
-    Point2D Center() { return Point2D{min_x + Width() / 2, min_y + Height() / 2}; }
+    Point2D Center() const { return Point2D{min_x + Width() / 2, min_y + Height() / 2}; }
 };
 
 struct Line {
@@ -96,12 +96,12 @@ struct Line {
 
     Point2D Direction() { return end - start; }
 
-    BoundingBox BoundBox() {
+    BoundingBox BoundBox() const {
         return BoundingBox{std::min(start.x, end.x), std::min(start.y, end.y), std::max(start.x, end.x),
                            std::max(start.y, end.y)};
     }
 
-    double Height() { return std::fabs(end.y - start.y); }
+    double Height() const { return std::fabs(end.y - start.y); }
 
     Point2D Center() { return (start + end) / 2; }
 
@@ -126,11 +126,11 @@ struct Triangle {
     std::array<Point2D, 3> Vertices() { return {a, b, c}; }
     Lines2D<4> Lines() const { return {{a.x, b.x, c.x, a.x}, {a.y, b.y, c.y, a.y}}; }
 
-    double Area() { return std::fabs((b - a).Cross(c - a) / 2); }
+    double Area() const { return std::fabs((b - a).Cross(c - a) / 2); }
 
-    double Height() { return std::max({a.y, b.y, c.y}) - std::min({a.y, b.y, c.y}); }
+    double Height() const { return std::max({a.y, b.y, c.y}) - std::min({a.y, b.y, c.y}); }
 
-    BoundingBox BoundBox() {
+    BoundingBox BoundBox() const {
         return BoundingBox{std::min({a.x, b.x, c.x}), std::min({a.y, b.y, c.y}), std::max({a.x, b.x, c.x}),
                            std::max({a.y, b.y, c.y})};
     }
@@ -151,11 +151,11 @@ struct Rectangle {
                 {bottom_left.y, bottom_left.y, bottom_left.x + height, bottom_left.x + height, bottom_left.y}};
     }
 
-    double Area() { return width * height; }
+    double Area() const { return width * height; }
 
-    double Height() { return height; }
+    double Height() const { return height; }
 
-    BoundingBox BoundBox() {
+    BoundingBox BoundBox() const {
         return BoundingBox{bottom_left.x, bottom_left.y, bottom_left.x + width, bottom_left.y + height};
     }
 };
@@ -168,8 +168,8 @@ struct RegularPolygon {
     constexpr RegularPolygon(Point2D center, double radius, int sides)
         : center_p(center), radius(radius), sides(sides) {}
 
-    Point2D Center() { return center_p; }
-    std::vector<Point2D> Vertices() {
+    Point2D Center() const { return center_p; }
+    std::vector<Point2D> Vertices() const {
         std::vector<Point2D> points;
         points.reserve(sides);
 
@@ -193,9 +193,9 @@ struct RegularPolygon {
         return Lines2DDyn(std::move(x), std::move(y));
     }
 
-    double Height() { return 0; }
+    double Height() const { return 0; }
 
-    BoundingBox BoundBox() {
+    BoundingBox BoundBox() const {
         std::vector<Point2D> points = Vertices();
         double min_x = INFINITY;
         double min_y = INFINITY;
@@ -225,16 +225,16 @@ struct Circle {
 
     constexpr Circle(Point2D center, double radius) : center_p(center), radius(radius) {}
 
-    BoundingBox BoundBox() {
+    BoundingBox BoundBox() const {
         return {center_p.x - radius, center_p.y - radius, center_p.x + radius, center_p.y + radius};
     }
-    double Height() { return center_p.y + radius; }
-    Point2D Center() { return center_p; }
+    double Height() const { return center_p.y + radius; }
+    Point2D Center() const { return center_p; }
 
     //
     // Должны быть сделана по аналогии с RegularPolygon::Vertices
     //
-    std::vector<Point2D> Vertices(int N = 30) { return RegularPolygon{center_p, radius, N}.Vertices(); }
+    std::vector<Point2D> Vertices(int N = 30) const { return RegularPolygon{center_p, radius, N}.Vertices(); }
     Lines2DDyn Lines(int N = 100) const { return RegularPolygon{center_p, radius, N}.Lines(); }
 };
 
@@ -245,7 +245,7 @@ public:
     //
     // Должны быть сделана по аналогии с RegularPolygon::Vertices
     //
-    Point2D Center() {
+    Point2D Center() const {
         return std::accumulate(points_.begin(), points_.end(), Point2D{0.0, 0.0},
                                [](Point2D acc, Point2D current) { return acc + current; }) /
                points_.size();
@@ -264,9 +264,9 @@ public:
         return lines;
     }
 
-    BoundingBox BoundBox() { return bounding_box_; }
+    BoundingBox BoundBox() const { return bounding_box_; }
 
-    double Height() { return bounding_box_.Height(); }
+    double Height() const { return bounding_box_.Height(); }
 
 private:
     std::vector<Point2D> points_;
