@@ -145,3 +145,21 @@ INSTANTIATE_TEST_SUITE_P(
         std::make_tuple<Shape, Point2D, double>(RegularPolygon(Point2D(0, 0), 6, 6), Point2D(0, 8), 8 - 3 * sqrt(3)),
         std::make_tuple<Shape, Point2D, double>(Circle(Point2D(0, 0), 6), Point2D(3, 0), 0),
         std::make_tuple<Shape, Point2D, double>(Circle(Point2D(0, 0), 6), Point2D(0, 8), 2)));
+
+class DistanceShape2Shape : public testing::TestWithParam<std::tuple<Shape, Shape, std::optional<double>>> {};
+TEST_P(DistanceShape2Shape, A) {
+    using namespace geometry::queries;
+    std::tuple<Shape, Shape, std::optional<double>> input = GetParam();
+    EXPECT_DOUBLE_EQ(DistanceBetweenShapes(std::get<0>(input), std::get<1>(input)).value(), std::get<2>(input).value());
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    A, DistanceShape2Shape,
+    testing::Values(
+        std::make_tuple<Shape, Shape, std::optional<double>>(Line(Point2D(0, 0), Point2D(2, 2)),
+                                                             Line(Point2D(2, 0), Point2D(0, 2)), 0.0),
+        std::make_tuple<Shape, Shape, std::optional<double>>(Line(Point2D(0, 0), Point2D(2, 2)),
+                                                             Line(Point2D(2, 0), Point2D(3, -1)), sqrt(2)),
+        std::make_tuple<Shape, Shape, std::optional<double>>(Circle(Point2D(0, 0), 6), Circle(Point2D(10, 0), 5), 0),
+        std::make_tuple<Shape, Shape, std::optional<double>>(Circle(Point2D(0, 0), 4), Circle(Point2D(10, 0), 3), 3),
+        std::make_tuple<Shape, Shape, std::optional<double>>(Circle(Point2D(0, 0), 20), Circle(Point2D(5, 0), 10), 0)));

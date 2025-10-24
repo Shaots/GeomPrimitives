@@ -1,6 +1,7 @@
 #pragma once
 #include "geometry.hpp"
 #include <algorithm>
+#include <intersections.hpp>
 #include <optional>
 #include <variant>
 
@@ -104,8 +105,42 @@ struct PointToShapeDistanceVisitor {
  * Для всех остальных требуется вернуть пустое значение
  */
 struct ShapeToShapeDistanceVisitor {
+    std::optional<double> operator()(const Shape &shape, const Point2D &point) const {
+        PointToShapeDistanceVisitor visitor{point};
+        return std::visit(visitor, shape);
+    }
 
-    /* ваш код здесь */
+    std::optional<double> operator()(const Line &line1, const Line &line2) const {
+        auto intersect = geometry::intersections::GetIntersectPoint(line1, line2);
+        if (!intersect.empty()) {
+            return 0.0;
+        }
+
+        // Otherwise find minimum distance between endpoints and the other line
+        PointToShapeDistanceVisitor visitor1{line1.start};
+        PointToShapeDistanceVisitor visitor2{line1.end};
+        PointToShapeDistanceVisitor visitor3{line2.start};
+        PointToShapeDistanceVisitor visitor4{line2.end};
+
+        double dist1 = visitor1(line2);
+        double dist2 = visitor2(line2);
+        double dist3 = visitor3(line1);
+        double dist4 = visitor4(line1);
+
+        return std::min({dist1, dist2, dist3, dist4});
+    }
+
+    std::optional<double> operator()(const Circle &circle1, const Circle &circle2) const {
+        double distance_between_centers = circle1.center_p.DistanceTo(circle2.center_p);
+        double distance = std::max(0.0, distance_between_centers - circle1.radius - circle2.radius);
+        return distance;
+    }
+
+    // Default case for unsupported combinations
+    template <typename T1, typename T2>
+    std::optional<double> operator()(const T1 &, const T2 &) const {
+        return std::nullopt;
+    }
 };
 
 /*
@@ -132,9 +167,8 @@ inline bool BoundingBoxesOverlap(const Shape &shape1, const Shape &shape2) {
 }
 
 std::optional<double> DistanceBetweenShapes(const Shape &shape1, const Shape &shape2) {
-    // ShapeToShapeDistanceVisitor visitor;
-    // return std::visit(visitor, shape1, shape2);
-    return std::nullopt;
+    ShapeToShapeDistanceVisitor visitor;
+    return std::visit(visitor, shape1, shape2);
 }
 
 }  // namespace geometry::queries
