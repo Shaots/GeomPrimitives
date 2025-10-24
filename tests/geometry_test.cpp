@@ -1,7 +1,8 @@
-#include <geometry.hpp>
+#include "geometry.hpp"
+#include "intersections.hpp"
+#include "queries.hpp"
+#include "shape_utils.hpp"
 #include <gtest/gtest.h>
-#include <intersections.hpp>
-#include <queries.hpp>
 
 using namespace geometry;
 
@@ -163,3 +164,9 @@ INSTANTIATE_TEST_SUITE_P(
         std::make_tuple<Shape, Shape, std::optional<double>>(Circle(Point2D(0, 0), 6), Circle(Point2D(10, 0), 5), 0),
         std::make_tuple<Shape, Shape, std::optional<double>>(Circle(Point2D(0, 0), 4), Circle(Point2D(10, 0), 3), 3),
         std::make_tuple<Shape, Shape, std::optional<double>>(Circle(Point2D(0, 0), 20), Circle(Point2D(5, 0), 10), 0)));
+
+TEST(BasicCheck, shape_utils) {
+    using namespace geometry::utils;
+    ShapeGenerator gen;
+    FindHighestShape(gen.GenerateTriangles(3)).value();
+}
