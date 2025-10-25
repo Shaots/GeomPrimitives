@@ -80,7 +80,24 @@ struct BoundingBox {
         return min_x == other.min_x && min_y == other.min_y && max_x == other.max_x && max_y == other.max_y;
     }
 
-    void Overlaps();
+    void Overlaps(const BoundingBox &other) const {
+        bool overlaps = !(max_x < other.min_x || min_x > other.max_x || max_y < other.min_y || min_y > other.max_y);
+
+        if (overlaps) {
+            std::println("Bounding boxes overlap:");
+            std::println("\tThis: [{:.2f}, {:.2f}] x [{:.2f}, {:.2f}]", min_x, max_x, min_y, max_y);
+            std::println("\tOther: [{:.2f}, {:.2f}] x [{:.2f}, {:.2f}]", other.min_x, other.max_x, other.min_y,
+                         other.max_y);
+
+            double overlap_width = std::max(0.0, std::min(max_x, other.max_x) - std::max(min_x, other.min_x));
+            double overlap_height = std::max(0.0, std::min(max_y, other.max_y) - std::max(min_y, other.min_y));
+            double overlap_area = overlap_width * overlap_height;
+
+            std::println("  Overlap area: {:.2f}", overlap_area);
+        } else {
+            std::println("Bounding boxes do not overlap");
+        }
+    }
 
     double Width() const { return max_x - min_x; }
 
@@ -279,15 +296,6 @@ enum class GeometryError { Unsupported, NoIntersection, InvalidInput, DegenrateC
 
 template <typename T>
 using GeometryResult = std::expected<T, GeometryError>;
-
-/*
- * В коде везде используется ReplaceMe. Ваша задача - удалить ReplaceMe и везде вместо него
- использовать наиболее подходящий тип для решения задачи
- */
-struct ReplaceMe {
-    ReplaceMe(std::vector<Shape>) {}
-};
-
 }  // namespace geometry
 
 template <>
@@ -413,5 +421,20 @@ struct std::formatter<geometry::Polygon> {
         }
 
         return std::format_to(out, "]");
+    }
+};
+
+template <>
+struct std::formatter<geometry::Shape> {
+    constexpr auto parse(std::format_parse_context &ctx) const { return ctx.begin(); }
+
+    template <typename FormatContext>
+    auto format(const geometry::Shape &shape, FormatContext &ctx) const {
+        auto out = ctx.out();
+        try {
+            return std::visit([&](const auto &s) { return std::format_to(out, "{}", s); }, shape);
+        } catch (const std::exception &e) {
+            return std::format_to(out, "Shape[format_error: {}]", e.what());
+        }
     }
 };
