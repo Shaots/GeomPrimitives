@@ -15,20 +15,28 @@ using namespace geometry;
 namespace rng = std::ranges;
 namespace views = std::ranges::views;
 
-void PrintAllIntersections(const Shape &shape, ReplaceMe others) {
+void PrintAllIntersections(const Shape &shape, const std::vector<Shape> &others) {
     std::println("\n=== Intersections ===");
-
-    /*
-     * Используйте ranges чтобы оставить только фигуры,
-     * поддерживающие возможность находить пересечения между собой
-     *
-     * Затем примените монадический интерфейс для обработки результатов:
-     *     - Пересечение найдено в точке A между фигурами B и C
-     *     - Фигуры B и C не пересекаются
-     */
+    auto supported_shapes = others | views::filter([&](const Shape &other) {
+                                try {
+                                    auto result = intersections::GetIntersectPoint(shape, other);
+                                    return true;
+                                } catch (const std::logic_error &) {
+                                    return false;
+                                }
+                            });
+    for (const auto &other : supported_shapes) {
+        auto result = intersections::GetIntersectPoint(shape, other);
+        if (!result.empty()) {
+            std::println("The intersection is found at point {} between figures {} and {}", result.front(), shape,
+                         other);
+        } else {
+            std::println("The figures {} and {} do not intersect", shape, other);
+        }
+    }
 }
 
-void PrintDistancesFromPointToShapes(Point2D p, ReplaceMe shapes) {
+void PrintDistancesFromPointToShapes(Point2D p, const std::vector<Shape> &shapes) {
     std::println("\n=== Distance from Point Test ===");
     std::println("Testing point: {} ", p);
 
@@ -37,9 +45,17 @@ void PrintDistancesFromPointToShapes(Point2D p, ReplaceMe shapes) {
      * Затем найдите расстояния от заданной точки до всех выбранных фигур.
      * Выведите результат в формате "Расстояние от точки P до фигуры S равно D"
      */
+    auto selected_shapes = shapes | views::take(5) | views::transform([&](const Shape &shape) {
+                               double distance = queries::DistanceToPoint(shape, p);
+                               return std::make_pair(shape, distance);
+                           });
+
+    for (const auto &[shape, distance] : selected_shapes) {
+        std::println("The distance from point {} to figure {} is equal to {:.4f}", p, shape, distance);
+    }
 }
 
-void PerformShapeAnalysis(ReplaceMe shapes) {
+void PerformShapeAnalysis(const std::vector<Shape> &shapes) {
     std::println("\n=== Shape Analysis ===");
 
     /*
@@ -48,6 +64,27 @@ void PerformShapeAnalysis(ReplaceMe shapes) {
      *     - Найти самую высокую фигуру (чья высота наибольшая)
      *     - Вывести расстояние между любыми двумя фигурами, которые поддерживают данную функциональность
      */
+    auto collisions = utils::FindAllCollisions(shapes);
+    std::println("{} Bounding Box intersections found:", collisions.size());
+    for (const auto &[shape1, shape2] : collisions) {
+        std::println("  - {} and {}", shape1, shape2);
+    }
+
+    auto highest_index = utils::FindHighestShape(shapes);
+    if (highest_index) {
+        std::println("Tallest figure (index {}): {} with height {:.2f}", *highest_index, shapes[*highest_index],
+                     queries::GetHeight(shapes[*highest_index]));
+    }
+
+    if (shapes.size() >= 2) {
+        auto distance_result = queries::DistanceBetweenShapes(shapes[0], shapes[1]);
+        if (distance_result) {
+            std::println("The distance between the figures {} and {} is {:.2f}", shapes[0], shapes[1],
+                         *distance_result);
+        } else {
+            std::println("Spacing between shapes {} and {} is not supported", shapes[0], shapes[1]);
+        }
+    }
 }
 
 void PerformExtraShapeAnalysis(std::span<const Shape> shapes) {
@@ -58,6 +95,29 @@ void PerformExtraShapeAnalysis(std::span<const Shape> shapes) {
      *     - Вывести 3 любые фигуры, которые находятся выше 50.0
      *     - Вывести фигуры с наименьшей и с наибольшей высотами
      */
+    auto high_shapes =
+        shapes | views::filter([](const Shape &shape) { return queries::GetHeight(shape) > 50.0; }) | views::take(3);
+
+    std::println("3 figures above 50.0:");
+    for (const auto &shape : high_shapes) {
+        std::println("  - {} (height: {:.2f})", shape, queries::GetHeight(shape));
+    }
+
+    auto min_height_it = rng::min_element(
+        shapes, [](const Shape &a, const Shape &b) { return queries::GetHeight(a) < queries::GetHeight(b); });
+
+    if (min_height_it != shapes.end()) {
+        std::println("The figure with the smallest height is: {} (height: {:.2f})", *min_height_it,
+                     queries::GetHeight(*min_height_it));
+    }
+
+    auto max_height_it = rng::max_element(
+        shapes, [](const Shape &a, const Shape &b) { return queries::GetHeight(a) < queries::GetHeight(b); });
+
+    if (max_height_it != shapes.end()) {
+        std::println("The figure with the greatest height is: {} (height: {:.2f})", *max_height_it,
+                     queries::GetHeight(*max_height_it));
+    }
 }
 
 int main() {
@@ -88,22 +148,24 @@ int main() {
     //
     // Важно: после изучения графика - нажмите Enter чтобы продолжить выполнение и построить 2ой график
     //
-    geometry::visualization::Draw(shapes);
+    // geometry::visualization::Draw(shapes);
 
     //
     // Формируем список из вершин всех фигур
     //
     std::vector<Point2D> points;
 
-    /* ваш код здесь */
+    auto convex_hull_result = convex_hull::GrahamScan(points);
+    if (convex_hull_result.has_value()) {
+        auto convex_hull_points = convex_hull_result.value();
+        Polygon convex_hull_polygon;
+        shapes.push_back(convex_hull_polygon);
+        std::println("The convex hull is constructed successfully and contains {} points.", convex_hull_points.size());
+    } else {
+        std::println("Convex hull construction error");
+    }
 
-    //
-    // Находим список точек, для построения выпуклой оболочки - convex hull - алгоритмом Грэхема
-    // Создаём из них объект класса `Polygon` и добавляем его в список shapes
-    // Рисуем все фигуры
-    //
-
-    /* ваш код здесь */
+    // geometry::visualization::Draw(shapes);
 
     //
     // после изучения графика - нажмите Enter чтобы продолжить выполнение и построить 3ий график
@@ -119,6 +181,19 @@ int main() {
         // После успешного завершения алгоритма - выведите результат для проверки
         // используя geometry::visualization::Draw
         //
+        auto triangulation_result = triangulation::DelaunayTriangulation(points);
+        if (triangulation_result.has_value()) {
+            auto triangles = triangulation_result.value();
+            std::println("The Delaunay triangulation is successfully constructed and contains {} triangles.",
+                         triangles.size());
+            std::vector<Shape> triangle_shapes;
+            for (const auto &triangle : triangles) {
+                triangle_shapes.push_back(Triangle{triangle.a, triangle.b, triangle.c});
+            }
+            // geometry::visualization::Draw(triangle_shapes);
+        } else {
+            std::println("Delaunay triangulation error");
+        }
     }
     return 0;
 }
