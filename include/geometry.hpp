@@ -4,6 +4,7 @@
 #include <cmath>
 #include <expected>
 #include <format>
+#include <iostream>
 #include <numbers>
 #include <numeric>
 #include <optional>
@@ -206,25 +207,8 @@ struct RegularPolygon {
 
     BoundingBox BoundBox() const {
         std::vector<Point2D> points = Vertices();
-        double min_x = INFINITY;
-        double min_y = INFINITY;
-        double max_x = -INFINITY;
-        double max_y = -INFINITY;
-        std::for_each(points.begin(), points.end(), [&](const Point2D &p) {
-            if (p.x < min_x) {
-                min_x = p.x;
-            }
-            if (p.y < min_y) {
-                min_y = p.y;
-            }
-            if (p.x > max_x) {
-                max_x = p.x;
-            }
-            if (p.y > max_y) {
-                max_y = p.y;
-            }
-        });
-        return BoundingBox{min_x, min_y, max_x, max_y};
+        return BoundingBox{std::ranges::min(points, {}, &Point2D::x).x, std::ranges::min(points, {}, &Point2D::y).y,
+                           std::ranges::max(points, {}, &Point2D::x).x, std::ranges::max(points, {}, &Point2D::y).y};
     }
 };
 
