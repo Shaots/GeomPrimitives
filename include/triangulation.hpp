@@ -108,6 +108,8 @@ inline GeometryResult<std::vector<DelaunayTriangle>> DelaunayTriangulation(std::
     Point2D super2(max_x + delta, min_y - delta);
     Point2D super3(min_x + dx / 2, max_y + delta);
 
+    std::vector<Point2D> super_vertices = {super1, super2, super3};
+
     std::vector<DelaunayTriangle> triangulation;
     triangulation.emplace_back(super1, super2, super3);
 
@@ -151,9 +153,14 @@ inline GeometryResult<std::vector<DelaunayTriangle>> DelaunayTriangulation(std::
 
     triangulation.erase(std::remove_if(triangulation.begin(), triangulation.end(),
                                        [&](const DelaunayTriangle &tri) {
-                                           return tri.a == super1 || tri.a == super2 || tri.a == super3 ||
-                                                  tri.b == super1 || tri.b == super2 || tri.b == super3 ||
-                                                  tri.c == super1 || tri.c == super2 || tri.c == super3;
+                                           for (const Point2D &vertex : {tri.a, tri.b, tri.c}) {
+                                               for (const Point2D &super_vertex : super_vertices) {
+                                                   if (vertex == super_vertex) {
+                                                       return true;
+                                                   }
+                                               }
+                                           }
+                                           return false;
                                        }),
                         triangulation.end());
 
