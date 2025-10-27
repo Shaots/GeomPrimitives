@@ -79,22 +79,15 @@ struct BoundingBox {
         return min_x == other.min_x && min_y == other.min_y && max_x == other.max_x && max_y == other.max_y;
     }
 
-    void Overlaps(const BoundingBox &other) const {
+    std::optional<double> Overlaps(const BoundingBox &other) const {
         bool overlaps = !(max_x < other.min_x || min_x > other.max_x || max_y < other.min_y || min_y > other.max_y);
 
         if (overlaps) {
-            std::println("Bounding boxes overlap:");
-            std::println("\tThis: [{:.2f}, {:.2f}] x [{:.2f}, {:.2f}]", min_x, max_x, min_y, max_y);
-            std::println("\tOther: [{:.2f}, {:.2f}] x [{:.2f}, {:.2f}]", other.min_x, other.max_x, other.min_y,
-                         other.max_y);
-
             double overlap_width = std::max(0.0, std::min(max_x, other.max_x) - std::max(min_x, other.min_x));
             double overlap_height = std::max(0.0, std::min(max_y, other.max_y) - std::max(min_y, other.min_y));
-            double overlap_area = overlap_width * overlap_height;
-
-            std::println("  Overlap area: {:.2f}", overlap_area);
+            return overlap_width * overlap_height;
         } else {
-            std::println("Bounding boxes do not overlap");
+            return std::nullopt;
         }
     }
 
