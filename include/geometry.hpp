@@ -14,6 +14,7 @@
 
 namespace geometry {
 
+const double eps = 1e-10;
 /*
  * Добавьте к методам класса Point2D и Lines2DDyn все необходимые аттрибуты и спецификаторы
  * Важно: Возвращаемый тип и принимаемые аргументы менять не нужно
@@ -26,9 +27,7 @@ struct Point2D {
 
     // Comparison
     bool operator<(const Point2D &other) const { return x < other.x && y < other.y; }
-    bool operator==(const Point2D &other) const {
-        return std::fabs(x - other.x) < 1e-10 && std::fabs(y - other.y) < 1e-10;
-    }
+    bool operator==(const Point2D &other) const { return std::fabs(x - other.x) < eps && std::fabs(y - other.y) < eps; }
 
     // Binary math operators
     Point2D operator+(const Point2D &other) const { return {x + other.x, y + other.y}; }

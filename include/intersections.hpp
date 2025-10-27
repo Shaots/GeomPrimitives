@@ -20,7 +20,6 @@ public:
 };
 
 inline std::vector<Point2D> GetIntersectPoint(const Shape &shape1, const Shape &shape2) {
-    double eps = 1e-10;
     auto get_type_name = [](const auto &shape) -> std::string {
         using T = std::decay_t<decltype(shape)>;
         if constexpr (std::is_same_v<T, Line>)
@@ -46,7 +45,7 @@ inline std::vector<Point2D> GetIntersectPoint(const Shape &shape1, const Shape &
         // Line Line
         if constexpr (std::is_same_v<T1, Line> && std::is_same_v<T2, Line>) {
             double det = (s1.end - s1.start).Cross(s2.end - s2.start);
-            if (std::fabs(det) < eps) {
+            if (std::fabs(det) < geometry::eps) {
                 return {};
             }
             double t = (s2.start - s1.start).Cross(s2.end - s2.start) / det;

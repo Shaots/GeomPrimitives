@@ -23,14 +23,14 @@ GeometryResult<std::vector<Point2D>> GrahamScan(std::vector<Point2D> points) {
     std::iter_swap(points.begin(), p0_it);
     std::ranges::sort(points.begin() + 1, points.end(), [p0](const Point2D &a, const Point2D &b) {
         double cross = CrossProduct(a, p0, b);
-        if (std::fabs(cross) < 1e-10) {
+        if (std::fabs(cross) < geometry::eps) {
             return p0.DistanceTo(a) > p0.DistanceTo(b);
         }
         return cross > 0;
     });
     auto unique_pred = [p0](const Point2D &a, const Point2D &b) {
         double cross = CrossProduct(a, p0, b);
-        return std::fabs(cross) < 1e-10;
+        return std::fabs(cross) < geometry::eps;
     };
     auto last = std::unique(points.begin() + 1, points.end(), unique_pred);
     points.erase(last, points.end());

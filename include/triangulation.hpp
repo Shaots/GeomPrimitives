@@ -15,12 +15,12 @@ struct DelaunayTriangle {
     bool ContainsPoint(const Point2D &p) const {
         Point2D center = Circumcenter();
         double radius = Circumradius();
-        return center.DistanceTo(p) <= radius + 1e-10;
+        return center.DistanceTo(p) <= radius + geometry::eps;
     }
 
     Point2D Circumcenter() const {
         double d = 2 * (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y));
-        if (std::abs(d) < 1e-10) {
+        if (std::abs(d) < geometry::eps) {
             return {(a.x + b.x + c.x) / 3, (a.y + b.y + c.y) / 3};
         }
 
@@ -47,7 +47,7 @@ struct DelaunayTriangle {
         int shared_count = 0;
         for (const Point2D &p1 : this_points) {
             for (const Point2D &p2 : other_points) {
-                if (std::abs(p1.x - p2.x) < 1e-10 && std::abs(p1.y - p2.y) < 1e-10) {
+                if (std::abs(p1.x - p2.x) < geometry::eps && std::abs(p1.y - p2.y) < geometry::eps) {
                     shared_count++;
                     break;
                 }
@@ -70,18 +70,18 @@ struct Edge {
     }
 
     bool operator<(const Edge &other) const {
-        if (std::abs(p1.x - other.p1.x) > 1e-10)
+        if (std::abs(p1.x - other.p1.x) > geometry::eps)
             return p1.x < other.p1.x;
-        if (std::abs(p1.y - other.p1.y) > 1e-10)
+        if (std::abs(p1.y - other.p1.y) > geometry::eps)
             return p1.y < other.p1.y;
-        if (std::abs(p2.x - other.p2.x) > 1e-10)
+        if (std::abs(p2.x - other.p2.x) > geometry::eps)
             return p2.x < other.p2.x;
         return p2.y < other.p2.y;
     }
 
     bool operator==(const Edge &other) const {
-        return std::abs(p1.x - other.p1.x) < 1e-10 && std::abs(p1.y - other.p1.y) < 1e-10 &&
-               std::abs(p2.x - other.p2.x) < 1e-10 && std::abs(p2.y - other.p2.y) < 1e-10;
+        return std::abs(p1.x - other.p1.x) < geometry::eps && std::abs(p1.y - other.p1.y) < geometry::eps &&
+               std::abs(p2.x - other.p2.x) < geometry::eps && std::abs(p2.y - other.p2.y) < geometry::eps;
     }
 };
 
